@@ -1,3 +1,5 @@
+import java.nio.file.WatchEvent.Kind;
+import java.util.HashSet;
 import java.util.Stack;
 
 // STATE TRACKERS
@@ -99,6 +101,100 @@ class BoardGraph{
                 grid[x][y].setPiece(null);
             }
         }
+    }
+}
+
+class MoveValidator{
+    public static HashSet<Square> getAttackedVertices(BoardGraph board, Color enemyColor){
+        HashSet<Square> attackedSet = new HashSet<>();
+        for(int y = 0; y < 8; y++){
+            for(int x = 0; x < 8; x++){
+                Square sq = board.getSquare(x, y);
+                if(!sq.isEmpty && sq.getPiece().getColor() == enemyColor){
+                    attackedSet.addAll(sq.getPiece().calculateLegalEdges(board, sq));
+                }
+            }
+        }
+        return attackedSet;
+    }
+    public static boolean isMoveStrictlyLegal(BoardGraph board, Square start, Square target, Color movingColor){
+        Piece movingPiece = start.getPiece();
+        Piece targetOriginalPiece = target.getPiece();
+
+        boolean isCastling = (movingPiece instanceof King) && Math.abs(start.getX() - target.getX()) == 2;
+        Square transitSquare = null;
+        if(isCastling){
+            int dir = (target.getX() > start.getX()) ? 1 : -1;
+        }
+        Square epCaptureSquare = null;
+        Piece epCapturePiece = null;
+        if(movingPiece instanceof Pawn && target.isEmpty() && start.getX() != target.getX()){
+            epCaptureSquare = board.getSquare(target.getX(), start.getY());
+            epCapturePiece = epCaptureSquare.getPiece();
+            epCaptureSquare.setPiece(null);
+        }
+        start.setPiece(null);
+        target.setPiece(movingPiece);
+
+        Square kingVertex = null;
+        for(int y = 0; y < 8; y++){
+            for(int x = 0; x < 8; x++){
+                Square sq = board.getSquare(x, y);
+                if(!sq.isEmpty() && sq.getPiece() instanceof King && sq.getPiece().getColor() == movingColor){
+                    kingVertex = sq;
+                    break;
+                }
+            }
+        }
+        Color enemyColor = (movingColor == Color.WHITE) ? Color.BLACK : Color.WHITE;
+        HashSet<Square> enemyAttacks = getAttackedVertices(board, enemyColor);
+        boolean isLegal = (kingVertex != null) && !enemyAttacks.contains(kingVertex);
+        
+        // Strict Castling Constraint: King cannot pass through check or be in check initially
+        if (isCastling && isLegal) {
+            if (enemyAttacks.contains(start) || enemyAttacks.contains(transitSquare)) {
+                isLegal = false;
+            }
+        }
+
+        target.setPiece(targetOriginalPiece);
+        start.setPiece(movingPiece);
+        if (epCaptureSquare != null){
+            epCaptureSquare.setPiece(epCapturedPiece); 
+        }
+        return isLegal;
+    }
+
+    public static GameState evaluateGameState(BoardGraph board, Color currentTurn) {
+        boolean hasLegalMoves = false;
+        Square kingVertex = null;
+
+        for (int y = 0; y < 8; y++) {
+            for (int x = 0; x < 8; x++) {
+                Square sq = board.getSquare(x, y);
+                if (!sq.isEmpty() && sq.getPiece().getColor() == currentTurn) {
+                    if (sq.getPiece() instanceof King){
+                        kingVertex = sq;
+                    }
+                    HashSet<Square> pseudoEdges = sq.getPiece().calculateLegalEdges(board, sq);
+                    for (Square target : pseudoEdges) {
+                        if (isMoveStrictlyLegal(board, sq, target, currentTurn)) {
+                            hasLegalMoves = true;
+                            break; 
+                        }
+                    }
+                }
+            }
+        }
+
+        Color enemyColor = (currentTurn == Color.WHITE) ? Color.BLACK : Color.WHITE;
+        boolean inCheck = kingVertex != null && getAttackedVertices(board, enemyColor).contains(kingVertex);
+
+        if (!hasLegalMoves) {
+            if (inCheck) return (currentTurn == Color.WHITE) ? GameState.BLACK_WINS : GameState.WHITE_WINS;
+            else return GameState.STALEMATE;
+        }
+        return GameState.ACTIVE;
     }
 }
 

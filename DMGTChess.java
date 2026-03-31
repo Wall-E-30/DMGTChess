@@ -3,6 +3,17 @@ import java.util.Stack;
 import javax.swing.*;
 import java.awt.*;
 
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+
 // STATE TRACKERS
 enum Color {WHITE, BLACK}
 enum GameState {ACTIVE, WHITE_WINS, BLACK_WINS, STALEMATE}

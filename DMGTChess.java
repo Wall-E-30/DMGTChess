@@ -329,7 +329,7 @@ public class DMGTChess extends JFrame {
     private JButton undoBtn, redoBtn;
 
     public DMGTChess() {
-        setTitle("DMGT Chess - Complete MVP (+Castling)");
+        setTitle("Chess (DMGT concepts)");
         setSize(950, 700); 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
